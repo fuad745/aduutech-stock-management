@@ -32,6 +32,13 @@ class Product extends Model
         'deleted_at' => 'datetime',
     ];
 
+    protected $appends = ['image_url'];
+
+    public function getImageUrlAttribute()
+    {
+        return $this->image ? asset('storage/' . $this->image) : null;
+    }
+
     protected static function booted(): void
     {
         static::creating(function (self $product) {

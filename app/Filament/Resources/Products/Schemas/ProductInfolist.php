@@ -16,11 +16,10 @@ class ProductInfolist
                 Section::make('Overview')
                     ->columns(2)
                     ->schema([
-                        ImageEntry::make('image')
+                        ImageEntry::make('image_url')
                             ->label('Product Image')
-                            ->disk('public')
                             ->height(200)
-                            ->hidden(fn ($record) => blank($record?->image)),
+                            ->hidden(fn ($record) => empty($record?->image)),
                         TextEntry::make('description')
                             ->html()
                             ->prose()

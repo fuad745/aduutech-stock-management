@@ -54,9 +54,15 @@ class ProductForm
                             ->directory('products')
                             ->disk('public')
                             ->visibility('public')
-                            ->avatar()
+                            ->imageResizeMode('cover')
+                            ->imageCropAspectRatio('16:9')
+                            ->imageResizeTargetWidth('800')
+                            ->imageResizeTargetHeight('600')
                             ->maxSize(4096)
-                            ->nullable(),
+                            ->nullable()
+                            ->downloadable()
+                            ->openable()
+                            ->preserveFilenames(),
                         Textarea::make('description')
                             ->rows(6)
                             ->placeholder('Describe the product...')
