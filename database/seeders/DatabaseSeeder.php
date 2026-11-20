@@ -22,5 +22,7 @@ class DatabaseSeeder extends Seeder
                 'password' => \Illuminate\Support\Facades\Hash::make('Admin@2025!'),
             ]
         );
+
+        $this->call(RoleSeeder::class);
     }
 }

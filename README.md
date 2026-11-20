@@ -194,6 +194,54 @@ npm run dev
 - **Queue Workers**: Check logs at `storage/logs/worker.log`
 - **Application Logs**: Check `storage/logs/laravel.log`
 
+## Roles & Production Setup
+
+### Role-Based Access Control
+
+Install the required packages:
+
+```bash
+composer require spatie/laravel-permission
+composer require filament/shield
+php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
+php artisan migrate
+php artisan shield:install --fresh
+php artisan shield:generate --all
+```
+
+Then seed the roles:
+
+```bash
+php artisan db:seed --class=RoleSeeder
+```
+
+Three roles are defined:
+
+| Role | Permissions |
+|------|-------------|
+| **Admin** | Full access — create, edit, delete products & batches |
+| **Storekeeper** | Create and edit products & batches, adjust stock. Cannot delete. |
+| **Viewer** | Read-only access to products and batches |
+
+The `admin@aduutech.com` user is automatically assigned the Admin role by the seeder.
+
+### Backups
+
+Install `spatie/laravel-backup` for automated off-site backups:
+
+```bash
+composer require spatie/laravel-backup
+php artisan vendor:publish --provider="Spatie\LaravelBackup\BackupServiceProvider"
+```
+
+Configure `AWS_*` and `BACKUP_DISK` in `.env`. Add to crontab:
+
+```bash
+* * * * * cd /path/to/app && php artisan schedule:run >> /dev/null 2>&1
+```
+
+**Always test a restore before going live.**
+
 ## License
 
 This project is proprietary software.
