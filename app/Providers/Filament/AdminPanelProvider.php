@@ -44,6 +44,7 @@ class AdminPanelProvider extends PanelProvider
                 \App\Filament\Widgets\ProductStats::class,
                 \App\Filament\Widgets\ProductsByBrandChart::class,
                 \App\Filament\Widgets\LowStockStats::class,
+                \App\Filament\Widgets\StockMovementsByEmployeeWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
