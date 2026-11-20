@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Batch;
 use App\Models\StockMovement;
 
 class Product extends Model
@@ -112,5 +113,15 @@ class Product extends Model
     public function stockMovements()
     {
         return $this->hasMany(StockMovement::class)->latest();
+    }
+
+    public function batches()
+    {
+        return $this->hasMany(Batch::class)->orderBy('expiry_date');
+    }
+
+    public function getAvailableQuantityAttribute(): int
+    {
+        return (int) $this->batches()->sum('quantity');
     }
 }

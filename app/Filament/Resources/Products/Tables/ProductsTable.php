@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Products\Tables;
 
+use App\Models\Batch;
 use App\Models\StockMovement;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -99,6 +100,26 @@ class ProductsTable
                             ])
                             ->required()
                             ->live(),
+                        Select::make('batch_id')
+                            ->label('Batch / Lot (FEFO)')
+                            ->placeholder('Select batch (optional)')
+                            ->visible(fn ($get) => $get('movement_type') === 'removal')
+                            ->options(function ($livewire) {
+                                $record = $livewire->getMountedTableActionRecord();
+                                if (! $record) {
+                                    return [];
+                                }
+                                return Batch::where('product_id', $record->id)
+                                    ->inStock()
+                                    ->orderBy('expiry_date')
+                                    ->get()
+                                    ->mapWithKeys(fn (Batch $b) => [
+                                        $b->id => $b->lot_number
+                                            . ($b->expiry_date ? ' (exp: ' . $b->expiry_date->format('d/m/Y') . ')' : '')
+                                            . ' — qty: ' . $b->quantity,
+                                    ])
+                                    ->all();
+                            }),
                         TextInput::make('quantity')
                             ->label(fn ($get) => $get('movement_type') === 'set' ? 'New quantity' : 'Quantity')
                             ->numeric()
@@ -123,6 +144,7 @@ class ProductsTable
 
                         StockMovement::create([
                             'product_id'      => $record->id,
+                            'batch_id'        => $data['batch_id'] ?? null,
                             'user_id'         => Auth::id() ?: null,
                             'type'            => $type,
                             'quantity_before' => $before,
@@ -130,6 +152,13 @@ class ProductsTable
                             'quantity_change' => $after - $before,
                             'note'            => $data['note'] ?? null,
                         ]);
+
+                        if (! empty($data['batch_id']) && $data['movement_type'] === 'removal') {
+                            $batch = Batch::find($data['batch_id']);
+                            if ($batch) {
+                                $batch->decrement('quantity', $qty);
+                            }
+                        }
 
                         $record->updateQuietly(['quantity' => $after]);
                     }),

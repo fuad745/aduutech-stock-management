@@ -55,6 +55,10 @@ class StockMovementsRelationManager extends RelationManager
                     ->placeholder('—')
                     ->wrap(),
 
+                TextColumn::make('batch.lot_number')
+                    ->label('Lot')
+                    ->placeholder('—'),
+
                 TextColumn::make('user.name')
                     ->label('By')
                     ->placeholder('—'),
