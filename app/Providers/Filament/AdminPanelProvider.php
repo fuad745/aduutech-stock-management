@@ -29,7 +29,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->profile()
-            ->brandName('Aduu Tech Inventory Managment')
+            ->brandName('Aduu Tech Inventory Management')
             ->sidebarCollapsibleOnDesktop()
             ->globalSearch(false)
             ->colors([
