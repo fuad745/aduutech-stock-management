@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
 
 class Batch extends Model
@@ -34,6 +35,26 @@ class Batch extends Model
         static::creating(function (self $batch) {
             if (Auth::check()) {
                 $batch->created_by = Auth::id();
+            }
+        });
+
+        static::created(function (self $batch) {
+            // Skip during seeding/testing to avoid unwanted movements
+            if (App::runningUnitTests()) {
+                return;
+            }
+
+            if ($batch->quantity > 0) {
+                StockMovement::create([
+                    'product_id'      => $batch->product_id,
+                    'batch_id'        => $batch->id,
+                    'user_id'         => Auth::id() ?: null,
+                    'type'            => 'initial',
+                    'quantity_before' => 0,
+                    'quantity_after'  => $batch->quantity,
+                    'quantity_change' => $batch->quantity,
+                    'note'            => 'Initial stock — lot ' . $batch->lot_number,
+                ]);
             }
         });
     }

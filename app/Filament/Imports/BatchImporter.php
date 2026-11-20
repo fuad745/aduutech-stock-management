@@ -46,9 +46,13 @@ class BatchImporter extends Importer
 
     public function resolveRecord(): ?Batch
     {
+        // product_id from fillRecordUsing isn't available yet — look it up directly.
+        $productId = Product::where('product_name', $this->data['product_name'] ?? '')
+            ->value('id');
+
         return Batch::firstOrNew([
             'lot_number' => $this->data['lot_number'],
-            'product_id' => $this->record->product_id ?? null,
+            'product_id' => $productId,
         ]);
     }
 
