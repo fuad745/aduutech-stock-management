@@ -1,0 +1,3 @@
+product_name,lot_number,expiry_date,supplier,received_date,landed_cost,storage_condition,quantity
+"Dialyzer F6 HPS","LOT-2025-001","2027-06-30","MedSupply Co","2025-01-15","450.00","Room Temperature","50"
+"Bicarbonate Powder","LOT-2025-002","2026-12-31","PharmaChem","2025-02-01","120.00","Room Temperature","200"
