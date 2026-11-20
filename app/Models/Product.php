@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
+use App\Models\StockMovement;
 
 class Product extends Model
 {
@@ -48,9 +49,40 @@ class Product extends Model
             }
         });
 
+        static::created(function (self $product) {
+            if ($product->quantity > 0) {
+                StockMovement::create([
+                    'product_id'      => $product->id,
+                    'user_id'         => Auth::id() ?: null,
+                    'type'            => 'initial',
+                    'quantity_before' => 0,
+                    'quantity_after'  => $product->quantity,
+                    'quantity_change' => $product->quantity,
+                    'note'            => 'Initial stock on product creation',
+                ]);
+            }
+        });
+
         static::updating(function (self $product) {
             if (Auth::check()) {
                 $product->updated_by = Auth::id();
+            }
+        });
+
+        static::updated(function (self $product) {
+            $before = (int) $product->getOriginal('quantity');
+            $after  = (int) $product->quantity;
+
+            if ($before !== $after) {
+                StockMovement::create([
+                    'product_id'      => $product->id,
+                    'user_id'         => Auth::id() ?: null,
+                    'type'            => 'adjustment',
+                    'quantity_before' => $before,
+                    'quantity_after'  => $after,
+                    'quantity_change' => $after - $before,
+                    'note'            => null,
+                ]);
             }
         });
 
@@ -75,5 +107,10 @@ class Product extends Model
     public function deleter()
     {
         return $this->belongsTo(User::class, 'deleted_by');
+    }
+
+    public function stockMovements()
+    {
+        return $this->hasMany(StockMovement::class)->latest();
     }
 }
