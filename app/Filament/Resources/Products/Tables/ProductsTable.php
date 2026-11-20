@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Products\Tables;
 
 use App\Models\Batch;
+use App\Models\Customer;
 use App\Models\StockMovement;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -120,6 +121,12 @@ class ProductsTable
                                     ])
                                     ->all();
                             }),
+                        Select::make('customer_id')
+                            ->label('Customer / Facility')
+                            ->placeholder('Select recipient (optional)')
+                            ->visible(fn ($get) => $get('movement_type') === 'removal')
+                            ->searchable()
+                            ->options(fn () => Customer::orderBy('name')->pluck('name', 'id')->all()),
                         TextInput::make('quantity')
                             ->label(fn ($get) => $get('movement_type') === 'set' ? 'New quantity' : 'Quantity')
                             ->numeric()
@@ -145,6 +152,7 @@ class ProductsTable
                         StockMovement::create([
                             'product_id'      => $record->id,
                             'batch_id'        => $data['batch_id'] ?? null,
+                            'customer_id'     => $data['customer_id'] ?? null,
                             'user_id'         => Auth::id() ?: null,
                             'type'            => $type,
                             'quantity_before' => $before,

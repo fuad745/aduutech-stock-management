@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\Products\Pages;
 
 use App\Filament\Resources\Products\ProductResource;
+use App\Models\Batch;
+use App\Models\Customer;
 use App\Models\StockMovement;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -34,6 +36,29 @@ class ViewProduct extends ViewRecord
                         ])
                         ->required()
                         ->live(),
+                    Select::make('batch_id')
+                        ->label('Batch / Lot (FEFO)')
+                        ->placeholder('Select batch (optional)')
+                        ->visible(fn ($get) => $get('movement_type') === 'removal')
+                        ->options(function () {
+                            $record = $this->getRecord();
+                            return Batch::where('product_id', $record->id)
+                                ->inStock()
+                                ->orderBy('expiry_date')
+                                ->get()
+                                ->mapWithKeys(fn (Batch $b) => [
+                                    $b->id => $b->lot_number
+                                        . ($b->expiry_date ? ' (exp: ' . $b->expiry_date->format('d/m/Y') . ')' : '')
+                                        . ' — qty: ' . $b->quantity,
+                                ])
+                                ->all();
+                        }),
+                    Select::make('customer_id')
+                        ->label('Customer / Facility')
+                        ->placeholder('Select recipient (optional)')
+                        ->visible(fn ($get) => $get('movement_type') === 'removal')
+                        ->searchable()
+                        ->options(fn () => Customer::orderBy('name')->pluck('name', 'id')->all()),
                     TextInput::make('quantity')
                         ->label(fn ($get) => $get('movement_type') === 'set' ? 'New quantity' : 'Quantity')
                         ->numeric()
@@ -59,6 +84,8 @@ class ViewProduct extends ViewRecord
 
                     StockMovement::create([
                         'product_id'      => $record->id,
+                        'batch_id'        => $data['batch_id'] ?? null,
+                        'customer_id'     => $data['customer_id'] ?? null,
                         'user_id'         => Auth::id() ?: null,
                         'type'            => $type,
                         'quantity_before' => $before,
@@ -66,6 +93,13 @@ class ViewProduct extends ViewRecord
                         'quantity_change' => $after - $before,
                         'note'            => $data['note'] ?? null,
                     ]);
+
+                    if (! empty($data['batch_id']) && $data['movement_type'] === 'removal') {
+                        $batch = Batch::find($data['batch_id']);
+                        if ($batch) {
+                            $batch->decrement('quantity', $qty);
+                        }
+                    }
 
                     $record->updateQuietly(['quantity' => $after]);
                     $this->refreshFormData(['quantity']);

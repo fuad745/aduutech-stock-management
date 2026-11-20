@@ -59,6 +59,10 @@ class StockMovementsRelationManager extends RelationManager
                     ->label('Lot')
                     ->placeholder('—'),
 
+                TextColumn::make('customer.name')
+                    ->label('Customer')
+                    ->placeholder('—'),
+
                 TextColumn::make('user.name')
                     ->label('By')
                     ->placeholder('—'),
