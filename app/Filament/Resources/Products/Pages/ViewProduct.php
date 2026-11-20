@@ -97,7 +97,7 @@ class ViewProduct extends ViewRecord
                     if (! empty($data['batch_id']) && $data['movement_type'] === 'removal') {
                         $batch = Batch::find($data['batch_id']);
                         if ($batch) {
-                            $batch->decrement('quantity', $qty);
+                            $batch->update(['quantity' => max(0, $batch->quantity - $qty)]);
                         }
                     }
 

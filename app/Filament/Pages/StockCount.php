@@ -46,24 +46,27 @@ class StockCount extends Page
     {
         $this->validate(['newSessionName' => 'required|string|min:2|max:255']);
 
-        $session = StockCountSession::create([
-            'name'   => $this->newSessionName,
-            'status' => 'in_progress',
-        ]);
-
-        // Snapshot all in-stock batches
-        $batches = Batch::where('quantity', '>', 0)->with('product')->get();
-
-        foreach ($batches as $batch) {
-            StockCountItem::create([
-                'session_id'      => $session->id,
-                'batch_id'        => $batch->id,
-                'system_quantity' => $batch->quantity,
+        $sessionId = DB::transaction(function () {
+            $session = StockCountSession::create([
+                'name'   => $this->newSessionName,
+                'status' => 'in_progress',
             ]);
-        }
 
-        $this->activeSessionId  = $session->id;
-        $this->newSessionName   = '';
+            $batches = Batch::where('quantity', '>', 0)->with('product')->get();
+
+            foreach ($batches as $batch) {
+                StockCountItem::create([
+                    'session_id'      => $session->id,
+                    'batch_id'        => $batch->id,
+                    'system_quantity' => $batch->quantity,
+                ]);
+            }
+
+            return $session->id;
+        });
+
+        $this->activeSessionId    = $sessionId;
+        $this->newSessionName     = '';
         $this->showNewSessionForm = false;
     }
 
@@ -112,12 +115,15 @@ class StockCount extends Page
                     'type'            => 'adjustment',
                     'quantity_before' => $before,
                     'quantity_after'  => $after,
-                    'quantity_change' => $item->discrepancy,
+                    'quantity_change' => $after - $before,
                     'note'            => 'Stock count adjustment — ' . $session->name . ($item->note ? ': ' . $item->note : ''),
                 ]);
 
-                // Update batch quantity
+                // Update batch quantity and sync parent product
                 $batch->update(['quantity' => $after]);
+                $batch->product?->updateQuietly([
+                    'quantity' => $batch->product->batches()->sum('quantity'),
+                ]);
             }
 
             $session->update([

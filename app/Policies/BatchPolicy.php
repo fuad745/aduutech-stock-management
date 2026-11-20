@@ -45,7 +45,7 @@ class BatchPolicy
     private function hasAnyRole(User $user, array $roles): bool
     {
         if (!method_exists($user, 'hasRole')) {
-            return true;
+            return false;
         }
         return $user->hasRole($roles);
     }
